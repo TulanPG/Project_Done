@@ -1,0 +1,27 @@
+package main;
+
+public class Solution {
+    public static void main(String[] args) {
+
+
+        double[] tab01 = new double []{5874476, 2558086, 4887, 9347, 10863, 4553975, 1292818, 4626927, -3191995, 19199, 5961
+        };
+        double[] tab02 = new double []{738, 704, 1196, 1168, 1174, 426, -3611533, -236275, 1167943, 510, 1378
+        };
+
+        int a = tab01.length;
+
+        for (int x = 0; x < a; x++) {
+
+            double u = (tab01 [x]/tab02[x]);
+
+            if (u < 0 & u>-0.5 ){
+                System.out.println("0");
+            }
+        else {
+                System.out.format("%.0f%n", u);
+
+            }
+        }
+    }
+}

@@ -1,0 +1,25 @@
+package main;
+
+import java.util.Scanner;
+
+public class Solution {
+    public static void main(String[] args) {
+
+        Scanner in = new Scanner(System.in);
+
+        int i = in.nextInt();
+
+
+        for (int x = 0; x < i; x++) {
+            int A = in.nextInt();
+
+
+            int sum = 0;
+            while (A> 0) {
+                sum = sum + A % 10;
+                A = A / 10;
+            }
+            System.out.println(sum);
+        }
+        }
+    }
