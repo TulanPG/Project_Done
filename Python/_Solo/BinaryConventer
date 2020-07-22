@@ -1,0 +1,28 @@
+#Ip number decimal (in 32bit) to binary ipv4
+
+class App:
+    def solve(self, IP):
+        a=[]
+        #Prof that is 32bit No
+        if 0 < IP < 255**4:
+            binary = bin(IP).replace("0b", "")
+            #add zero's to No, for make sure, 0.XXX work
+            zeros = "0"*(32-len(binary))
+            binlec = str(zeros) + str(binary)
+            #convert from 0,1 -> decimal
+            for x in range(0,32,8):
+                    a.append(int((str(binlec)[x:x + 8]),2))
+            #make No in String
+            ipv4 = str(a[0])+"." + str(a[1])+ "." +str(a[2]) + "." +str(a[3])
+            
+            return ipv4
+
+app = App()
+
+print(app.solve(2133432))
+print(app.solve(34534534))
+print(app.solve(2149583361))
+
+#solve(2149583361) -> "128.32.10.1"
+#app.solve(34534534), "2.14.244.134")
+#app.solve(2133432), "0.32.141.184")
