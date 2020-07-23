@@ -2,12 +2,13 @@ import pygame
 import sys
 import random
 from pygame.locals import *  # udostępnienie nazw metod z locals
+import path_finder
 
 # TODO:
 # 1) przesuwanie kulki tylko jak nic nie przeszkadza
 # 2) linia przesunięcia kulki
 # 3) dzwięki
-#4) menu
+# 4) menu
 
 BLACK = (0, 0, 0)
 
@@ -20,7 +21,7 @@ yellow = pygame.image.load("yellow.png")
 blue = pygame.image.load("blue.png")
 color_list = [0, red, aqua, green, grey, pink, yellow, blue]
 
-#Can be changed 5-10
+# Can be changed 5-10
 COL = 9
 ROW = 9
 
@@ -33,9 +34,9 @@ play_board_light = [[0 for x in range(COL)] for y in range(ROW)]
 where_next = []
 balls_list = []
 
-ball_miss_after_refutation = 0
+ball_miss_after_smash = 0
 score = 0
-
+number_of_move = 0
 clicklocations = []
 clicklocations_light = []
 
@@ -77,19 +78,19 @@ class Board(object):
 
     def draw_board(self):
         background_board = (153, 204, 238)
-        pygame.draw.rect(self.surface, background_board, (0, SQUARESIZE*2, width, height))
-        for i in range(1, (COL+1)):
+        pygame.draw.rect(self.surface, background_board, (0, SQUARESIZE * 2, width, height))
+        for i in range(1, (COL + 1)):
             pos = int(width / COL * i)
             # Horizontal
             pygame.draw.line(self.surface, self.background, (0, pos + SQUARESIZE), (width, pos + SQUARESIZE), 2)
             # Vertical line
-            pygame.draw.line(self.surface, self.background, (pos, SQUARESIZE*2), (pos, width + SQUARESIZE*2), 2)
+            pygame.draw.line(self.surface, self.background, (pos, SQUARESIZE * 2), (pos, width + SQUARESIZE * 2), 2)
 
     def draw_score(self):
         ## DODAC WYNIK
         global score
         board_score = "Wynik: "
-        self.draw_text(board_score + str(score), center=(SQUARESIZE*2, SQUARESIZE), color=BLACK)
+        self.draw_text(board_score + str(score), center=(SQUARESIZE * 2, SQUARESIZE), color=BLACK)
 
     def draw_text(self, text, center, color=(180, 180, 180)):
         """
@@ -132,24 +133,29 @@ class Board(object):
         for i in range(0, COL):
             for j in range(0, COL):
 
-                x = j * SQUARESIZE + (SQUARESIZE/2)
-                y = i * SQUARESIZE + (SQUARESIZE*2) + (SQUARESIZE/2)
+                x = j * SQUARESIZE + (SQUARESIZE / 2)
+                y = i * SQUARESIZE + (SQUARESIZE * 2) + (SQUARESIZE / 2)
 
                 # Light
 
-                for k in range(1, (COL-1)):
+                for k in range(1, (COL - 1)):
                     if play_board_light[i][j] == 1:
-                        pygame.draw.rect(self.surface, (255, 255, 255), (int(x - ((SQUARESIZE-3)/2)), int(y - ((SQUARESIZE-3)/2)), SQUARESIZE-3, SQUARESIZE-3))
+                        pygame.draw.rect(self.surface, (255, 255, 255), (
+                        int(x - ((SQUARESIZE - 3) / 2)), int(y - ((SQUARESIZE - 3) / 2)), SQUARESIZE - 3,
+                        SQUARESIZE - 3))
 
                 # Balls
 
-                for k in range(1, (COL-1)):
+                for k in range(1, (COL - 1)):
                     if play_board[i][j] == k:
-                        self.surface.blit(pygame.transform.scale(color_list[k], (SQUARESIZE, SQUARESIZE)), (int(x - ((SQUARESIZE-2)/2)), int(y - ((SQUARESIZE-2)/2))))
+                        self.surface.blit(pygame.transform.scale(color_list[k], (SQUARESIZE, SQUARESIZE)),
+                                          (int(x - ((SQUARESIZE - 2) / 2)), int(y - ((SQUARESIZE - 2) / 2))))
                 for k in range(11, 18):
                     if play_board[i][j] == k:
                         k = k - 10
-                        self.surface.blit(pygame.transform.scale(color_list[k], (int(SQUARESIZE*0.4), int(SQUARESIZE*0.4))), (int(x - (SQUARESIZE*0.2)), int(y - (SQUARESIZE*0.2))) )
+                        self.surface.blit(
+                            pygame.transform.scale(color_list[k], (int(SQUARESIZE * 0.4), int(SQUARESIZE * 0.4))),
+                            (int(x - (SQUARESIZE * 0.2)), int(y - (SQUARESIZE * 0.2))))
 
     def draw_base_ball(self):
         # Wstawia wizualnie kulki na pozycję poglądową
@@ -157,7 +163,8 @@ class Board(object):
             width_ball = balls_list[k][0]
             height_ball = balls_list[k][1]
             chose_color = balls_list[k][2]
-            self.surface.blit(pygame.transform.scale(color_list[chose_color], (SQUARESIZE, SQUARESIZE)), (int(width_ball), int(height_ball)))
+            self.surface.blit(pygame.transform.scale(color_list[chose_color], (SQUARESIZE, SQUARESIZE)),
+                              (int(width_ball), int(height_ball)))
 
 
 class Ball(object):
@@ -177,8 +184,8 @@ class Ball(object):
             poleY = where_next[_][1]
             ball_color = where_next[_][2]
             while play_board[poleX][poleY] != 0 and play_board[poleX][poleY] < 10:
-                poleX = random.randint(0, (COL-1))
-                poleY = random.randint(0, (COL-1))
+                poleX = random.randint(0, (COL - 1))
+                poleY = random.randint(0, (COL - 1))
             if play_board[poleX][poleY] == 0 or play_board[poleX][poleY] > 10:
                 play_board[poleX][poleY] = ball_color
         ball_miss_after_refutation = 0
@@ -187,27 +194,26 @@ class Ball(object):
     def insert_board_3_ball_visual(self):
         # Pokazuje, małe kulki, gdzie się wstawią
         for _ in range(0, 3):
-            poleX = random.randint(0, (COL-1))
-            poleY = random.randint(0, (COL-1))
+            poleX = random.randint(0, (COL - 1))
+            poleY = random.randint(0, (COL - 1))
             while play_board[poleX][poleY] != 0:
-                poleX = random.randint(0, (COL-1))
-                poleY = random.randint(0, (COL-1))
+                poleX = random.randint(0, (COL - 1))
+                poleY = random.randint(0, (COL - 1))
             if play_board[poleX][poleY] == 0:
                 where_next.insert(0, [poleX, poleY, balls_list[_][2]])
                 play_board[poleX][poleY] = (balls_list[_][2] + 10)
 
     def insert_base_ball(self):
         # Dodaje 3 kulki do listy, wkłąda je na pozycję bazową (pokazową) -> draw base ball je pokazuje
-        for _ in range(8*SQUARESIZE, 5*SQUARESIZE, -SQUARESIZE):
-            balls_list.insert(0, (_, int(SQUARESIZE*0.6), random.randint(1, 7)))
+        for _ in range(8 * SQUARESIZE, 5 * SQUARESIZE, -SQUARESIZE):
+            balls_list.insert(0, (_, int(SQUARESIZE * 0.6), random.randint(1, 7)))
 
         self.insert_board_3_ball_visual()
 
     def smash_the_balls(self):
 
-
         global play_board
-        global ball_miss_after_refutation
+        global ball_miss_after_smash
         global score
         win_board_local = []
         poz = []
@@ -223,7 +229,7 @@ class Ball(object):
                                 for xx in range((play_board[Column].count(wining_No))):
                                     play_board[poz[xx][0]][poz[xx][1]] = 0
                                     score += 1
-                                ball_miss_after_refutation = 1
+                                ball_miss_after_smash = 1
 
                         else:
                             win_board_local = []
@@ -242,7 +248,7 @@ class Ball(object):
                                     Pole_vertical[poz[xx][0]][poz[xx][1]] = 0
                                     score += 1
                                 a = list(map(list, zip(*Pole_vertical)))
-                                ball_miss_after_refutation = 1
+                                ball_miss_after_smash = 1
                                 play_board = a
 
                         else:
@@ -252,43 +258,69 @@ class Ball(object):
         for i in range(1, 8):
             for poleX in range(0, 5):
                 for poleY in range(4, 9):
-                    if play_board[poleX][poleY] == i and play_board[poleX + 1][poleY - 1] == i and play_board[poleX + 2][
-                        poleY - 2] == i and play_board[poleX + 3][poleY - 3] == i and play_board[poleX + 4][poleY - 4] == i:
+                    if play_board[poleX][poleY] == i and play_board[poleX + 1][poleY - 1] == i and \
+                            play_board[poleX + 2][
+                                poleY - 2] == i and play_board[poleX + 3][poleY - 3] == i and play_board[poleX + 4][poleY - 4] == i:
                         play_board[poleX][poleY] = 0
                         play_board[poleX + 1][poleY - 1] = 0
                         play_board[poleX + 2][poleY - 2] = 0
                         play_board[poleX + 3][poleY - 3] = 0
                         play_board[poleX + 4][poleY - 4] = 0
-                        ball_miss_after_refutation = 1
+                        ball_miss_after_smash = 1
                         score += 5
 
             for poleX in range(0, 5):
                 for poleY in range(0, 5):
-                    if play_board[poleX][poleY] == i and play_board[poleX + 1][poleY + 1] == i and play_board[poleX + 2][
-                        poleY + 2] == i and play_board[poleX + 3][poleY + 3] == i and play_board[poleX + 4][poleY + 4] == i:
+                    if play_board[poleX][poleY] == i and play_board[poleX + 1][poleY + 1] == i and \
+                            play_board[poleX + 2][
+                                poleY + 2] == i and play_board[poleX + 3][poleY + 3] == i and play_board[poleX + 4][
+                        poleY + 4] == i:
                         play_board[poleX][poleY] = 0
                         play_board[poleX + 1][poleY + 1] = 0
                         play_board[poleX + 2][poleY + 2] = 0
                         play_board[poleX + 3][poleY + 3] = 0
                         play_board[poleX + 4][poleY + 4] = 0
-                        ball_miss_after_refutation = 1
+                        ball_miss_after_smash = 1
                         score += 5
 
     def ball_move(self, clicklocations):
-        global ball_miss_after_refutation
+        # do the move of balls
+        global ball_miss_after_smash
+        global number_of_move
         poleX1 = clicklocations[0][0]
         poleY1 = clicklocations[0][1]
         poleX2 = clicklocations[1][0]
         poleY2 = clicklocations[1][1]
-        a = play_board[poleX1][poleY1]
-        play_board[poleX1][poleY1] = 0
-        play_board[poleX2][poleY2] = a
-        Board.end_lighting(self, clicklocations, 1)
-        Ball.smash_the_balls(self)
-        if ball_miss_after_refutation == 0:
-            Ball.insert_board_3_ball(self)
-        if ball_miss_after_refutation == 1:
-            ball_miss_after_refutation = 0
+
+        number_of_move += 1
+        # give cpu rest, cause of No of iteration in path_finder
+        if number_of_move > 4:
+            if path_finder.find(clicklocations, play_board):
+                # print("można wykonać ruch")
+                a = play_board[poleX1][poleY1]
+                play_board[poleX1][poleY1] = 0
+                play_board[poleX2][poleY2] = a
+                Board.end_lighting(self, clicklocations, 1)
+                Ball.smash_the_balls(self)
+                if ball_miss_after_smash == 0:
+                    Ball.insert_board_3_ball(self)
+                    # Check if after insert 3 ball 5 ball will smash
+                    Ball.smash_the_balls(self)
+                if ball_miss_after_smash == 1:
+                    ball_miss_after_smash = 0
+            Board.end_lighting(self, clicklocations, 1)
+        else:
+            a = play_board[poleX1][poleY1]
+            play_board[poleX1][poleY1] = 0
+            play_board[poleX2][poleY2] = a
+            Board.end_lighting(self, clicklocations, 1)
+            Ball.smash_the_balls(self)
+            if ball_miss_after_smash == 0:
+                Ball.insert_board_3_ball(self)
+                # Check if after insert 3 ball 5 ball will smash
+                Ball.smash_the_balls(self)
+            if ball_miss_after_smash == 1:
+                ball_miss_after_smash = 0
 
 
 class Kulki(object):
@@ -301,12 +333,11 @@ class Kulki(object):
         Przygotowanie ustawień gry
         :param width: szerokość planszy mierzona liczbą komórek
         :param height: wysokość planszy mierzona liczbą komórek
-        :param cell_size: bok komórki w pikselach
         """
         pygame.init()
 
         self.Ball = Ball()
-        self.board = Board(width, SQUARESIZE*2 + height)
+        self.board = Board(width, SQUARESIZE * 2 + height)
         # zegar którego użyjemy do kontrolowania szybkości rysowania
         # kolejnych klatek gry
         self.fps_clock = pygame.time.Clock()
@@ -340,9 +371,9 @@ class Kulki(object):
 
             if event.type == MOUSEBUTTONDOWN:
                 mouseX, mouseY = event.pos
-                if mouseY > SQUARESIZE*2:
+                if mouseY > SQUARESIZE * 2:
                     if event.button == 1:
-                        poleX = (int((mouseY - (SQUARESIZE*2)) / SQUARESIZE))
+                        poleX = (int((mouseY - (SQUARESIZE * 2)) / SQUARESIZE))
                         poleY = int(mouseX / SQUARESIZE)
                         if clicklocations == []:
                             self.Ball.insert_board_3_ball()
