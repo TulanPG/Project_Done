@@ -4,26 +4,26 @@ start_i =0
 start_j=0
 end_i=0
 end_j=0
-maze =[]
+board =[]
 global iter
 iter = 0
 
 
 
 
-def find(location, board):
+def find(location, in_board):
     global start_i
     global start_j
     global end_i
     global end_j
-    global maze
+    global board
     global iter
     start_i = location[0][1]
     start_j = location[0][0]
     end_i = location[1][1]
     end_j = location[1][0]
 
-    maze = board
+    board = in_board
 
     nums = queue.Queue()
     nums.put("")
@@ -32,7 +32,7 @@ def find(location, board):
 
 
     #Return path, for draw path on board in future
-    while not findEnd(maze, add):
+    while not findEnd(board, add):
 
         if nums.qsize() != 0:
             add = nums.get()
@@ -40,7 +40,7 @@ def find(location, board):
             for j in ["L", "R", "U", "D"]:
                 put = add + j
                 #print(put)
-                if valid(maze, put):
+                if valid(board, put):
                     if len(put) < 3:
                         nums.put(put)
                     else:
@@ -57,7 +57,7 @@ def find(location, board):
         else:
             print("No Path ", iter)
             path_find = False
-            printMaze(maze, add)
+            printBoard(board, add)
             break
 
 
@@ -73,7 +73,7 @@ def start_point(maze):
     return start
 """
 
-def printMaze(maze, path=""):
+def printBoard(board, path=""):
 
 
     i = start_i
@@ -93,7 +93,7 @@ def printMaze(maze, path=""):
             j += 1
         pos.add((j, i))
 
-    for j, row in enumerate(maze):
+    for j, row in enumerate(board):
         for i, col in enumerate(row):
             if (j, i) in pos:
                 print("+ ", end="")
@@ -102,7 +102,7 @@ def printMaze(maze, path=""):
         print()
 
 
-def valid(maze, moves):
+def valid(board, moves):
     path_pos = []
 
     i = start_i
@@ -124,16 +124,16 @@ def valid(maze, moves):
             return False
 
 
-        if not (0 <= i < len(maze[0]) and 0 <= j < len(maze)):
+        if not (0 <= i < len(board[0]) and 0 <= j < len(board)):
             return False
-        elif (maze[j][i] == 1 or maze[j][i] == 2 or maze[j][i] == 3 or maze[j][i] == 4 or maze[j][i] == 5 or maze[j][i] == 6 or maze[j][i] == 7):
+        elif (board[j][i] == 1 or board[j][i] == 2 or board[j][i] == 3 or board[j][i] == 4 or board[j][i] == 5 or board[j][i] == 6 or board[j][i] == 7):
             return False
         path_pos.append([i, j])
     path_pos =[]
     return True
 
 
-def findEnd(maze, moves):
+def findEnd(board, moves):
 
     global iter
     i = start_i
@@ -153,7 +153,7 @@ def findEnd(maze, moves):
     iter += 1
     if j == end_j and i == end_i:
         print("Found: " + moves + " No. of iteration: " + str(iter))
-        #printMaze(maze, moves)
+        #printMaze(board, moves)
         iter = 0
         return True
 
@@ -164,7 +164,7 @@ def findEnd(maze, moves):
 #for test:
 
 """
-def createMaze3():
+def createBoard():
     board = [[0, 0, 0, 0, 0, 0, 0, 0, 0],
              [1, 1, 1, 1, 1, 1, 1, 7, 0],
              [0, 1, 0, 0, 0, 0, 0, 6, 0],
@@ -177,8 +177,8 @@ def createMaze3():
     return board
 #row, col 
 locationtest = [[0,0],[8,0]]
-mazetest = createMaze3()
-print(find(locationtest, mazetest))
+Board = createBoard()
+print(find(locationtest, Board))
 """
 
 
