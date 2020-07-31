@@ -8,4 +8,5 @@ https://www.codeabbey.com/index/user_profile?fbclid=IwAR3qW8FGmeeOBtMhAckgkp06pJ
 https://www.hackerrank.com/tulanpg
 
 Python: 
+Solo folder is programed by my
 Code from folder Tutorial is based on tutorials, as my 1st way of learning.
