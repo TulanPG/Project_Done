@@ -1,6 +1,5 @@
 import pygame
 import math
-from queue import PriorityQueue
 import time
 
 pygame.init()
@@ -9,11 +8,8 @@ WIDTH = 800
 screen = pygame.display.set_mode((WIDTH, WIDTH))
 pygame.display.set_icon(icon_32pix)
 pygame.display.set_caption("PathFinder by Tulan")
-Algorithm = []
-Algorithm.append(50)
-Algorithm.insert(1,"algorythm")
-total_time = []
-total_time.append('')
+Algorithm = "Dijkstra's"
+total_time = ['']
 total_time_end = False
 start_algorythm = False
 font = pygame.font.SysFont("freesansbold.ttf", 32)
@@ -67,24 +63,28 @@ class Spot:
         self.color = ORANGE
 
     def make_closed(self):
-        self.color = RED
+        if self.color != ORANGE:
+            self.color = RED
 
     def make_open(self):
-        self.color = green
+        if self.color != ORANGE:
+            if self.color != TURQUOISE:
+                self.color = green
 
     def make_barrier(self):
         self.color = BLACK
 
     def make_end(self):
+
         self.color = TURQUOISE
 
     def make_path(self):
-        self.color = PURPLE
+        if self.color != ORANGE:
+            if self.color != TURQUOISE:
+                self.color = PURPLE
 
     def draw(self, screen):
         pygame.draw.rect(screen, self.color, (self.x, self.y, self.width, self.width))
-        # TODO Dodać opis algorytmu
-        # TODO Dodać odległość
 
     def update_neighbors(self, grid):
         self.neighbors = []
@@ -108,13 +108,13 @@ def timer(starttime, totaltime=0):
     if totaltime == 0:
         timer = round((time.time() - starttime), 2)
         counting_text = font.render(str(timer), 1, (0, 0, 0))
-        counting_rect = (400, 100)
+        counting_rect = (600, 70)
         screen.blit(counting_text, counting_rect)
         pygame.display.update()
         total_time[0] = timer
     else:
         counting_text = font.render(str(totaltime), 1, (0, 0, 0))
-        counting_rect = (400, 100)
+        counting_rect = (600, 70)
         screen.blit(counting_text, counting_rect)
 
 
@@ -132,53 +132,7 @@ def reconstruct_path(came_from, current, draw):
         total_time_end = True
 
         draw()
-
-
-def algorithm_A_STAR(draw, grid, start, end):
-    count = 0
-    open_set = PriorityQueue()
-    open_set.put((0, count, start))
-    came_from = {}
-    g_score = {spot: float("inf") for row in grid for spot in row}
-    g_score[start] = 0
-    f_score = {spot: float("inf") for row in grid for spot in row}
-    f_score[start] = h(start.get_pos(), end.get_pos())
-
-    open_set_hash = {start}
-
-    while not open_set.empty():
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-
-        current = open_set.get()[2]
-        open_set_hash.remove(current)
-
-        if current == end:
-            reconstruct_path(came_from, end, draw)
-            end.make_end()
-
-            return True
-
-        for neighbor in current.neighbors:
-            temp_g_score = g_score[current] + 1
-
-            if temp_g_score < g_score[neighbor]:
-                came_from[neighbor] = current
-                g_score[neighbor] = temp_g_score
-                f_score[neighbor] = temp_g_score + h(neighbor.get_pos(), end.get_pos())
-                if neighbor not in open_set_hash:
-                    count += 1
-                    open_set.put((f_score[neighbor], count, neighbor))
-                    open_set_hash.add(neighbor)
-                    neighbor.make_open()
-        timer(starttime)
-        draw()
-
-        if current != start:
-            current.make_closed()
-
-    return False
+        print("reconstructed_path")
 
 
 def make_grid(rows, width):
@@ -201,6 +155,48 @@ def draw_board(screen, rows, width):
             pygame.draw.line(screen, BLUE, ((j * gap), 192), (j * gap, width))
 
 
+def text_objects(text, font):
+    textsurface = font.render(text, True, BLACK)
+    return textsurface, textsurface.get_rect()
+
+
+def button(msg, x, y, w, h, ic, ac, action=None):
+    # TODO: Podświetlenie
+    mouse = pygame.mouse.get_pos()
+    click = pygame.mouse.get_pressed()
+    if x + w > mouse[0] > x and y + h > mouse[1] > y:
+        pygame.draw.rect(screen, ac, (x, y, w, h))
+        if click[0] == 1 and action is not None:
+            global Algorithm
+
+            # Starting button
+            if action == "Dijkstra's":
+                Algorithm = "Dijkstra's"
+            elif action == "A* Search":
+                Algorithm = "A* Search"
+            elif action == "Breadth-first":
+                Algorithm = "Breadth-first"
+            """
+            elif action == "Greedy BFS":
+                Algorithm = "Greedy BFS"
+            elif action == "Swarm":
+                Algorithm = "Swarm"
+            elif action == "Depth-first":
+                Algorithm = "Depth-first"
+            elif action == "Bidirectional":
+                Algorithm = "Bidirectional"
+            elif action == "Convergent":
+                Algorithm = "Convergent"
+            """
+
+    else:
+        pygame.draw.rect(screen, ic, (x, y, w, h))
+    smalltext = pygame.font.Font('freesansbold.ttf', 20)
+    textsurf, textrect = text_objects(msg, smalltext)
+    textrect.center = (int(x + (w / 2)), int(y + (h / 2)))
+    screen.blit(textsurf, textrect)
+
+
 def draw(screen, grid, rows, width):
     screen.fill(WHITE)
 
@@ -211,21 +207,30 @@ def draw(screen, grid, rows, width):
     draw_board(screen, rows, width)
     pygame.draw.rect(screen, WHITE, (0, 0, 800, 192))
     counting_text1 = font.render("For start: press SPACE", 1, (0, 0, 0))
-    counting_rect1 = (500, 50)
+    counting_rect1 = (550, 10)
     screen.blit(counting_text1, counting_rect1)
     counting_text2 = font.render("For restart: press 'c'", 1, (0, 0, 0))
-    counting_rect2 = (500, 80)
+    counting_rect2 = (550, 30)
     screen.blit(counting_text2, counting_rect2)
     counting_text = font.render("Time:", 1, (0, 0, 0))
-    counting_rect = (380, 70)
+    counting_rect = (600, 50)
     screen.blit(counting_text, counting_rect)
     counting_text3 = font.render("Algorith chosed:", 1, (0, 0, 0))
-    counting_rect3 = (100, 70)
+    counting_rect3 = (10, 10)
     screen.blit(counting_text3, counting_rect3)
-    counting_text4 = font.render(str(Algorithm), 1, (0, 0, 0))
-    counting_rect4 = (100, 100)
+    counting_text4 = font.render(Algorithm, 1, (0, 0, 0))
+    counting_rect4 = (10, 30)
     screen.blit(counting_text4, counting_rect4)
-
+    x = 130
+    y = 40
+    button("Dijkstra's", 10, 20 + y, x, y, green, bright_green, "Dijkstra's")
+    button("A* Search", 10, 30 + 2 * y, x, y, green, bright_green, "A* Search")
+    button("Breadth-first", 20 + x, 20 + y, x, y, green, bright_green, "Breadth-first")
+    button("Depth-first", 20 + x, 30 + 2 * y, x, y, green, bright_green, "Depth-first")
+    button("Swarm", 30 + 2 * x, 20 + y, x, y, green, bright_green, "Swarm")
+    button("Bidirectional", 30 + 2 * x, 30 + 2 * y, x, y, green, bright_green, "Bidirectional")
+    button("Convergent", 40 + 3 * x, 20 + y, x, y, green, bright_green, "Convergent")
+    button("Greedy BFS", 40 + 3 * x, 30 + 2 * y, x, y, green, bright_green, "Greedy BFS")
 
     if total_time_end:
         timer(0, total_time[0])
@@ -242,8 +247,137 @@ def get_clicked_pos(pos, rows, width):
     return row, col
 
 
+def algorithm_Breadth_First_Search(draw, grid, start, end):
+    import queue  # Only different from A* algorithm
+    # Same as Dijkstra cause of construct neighbors
+    tracking = queue.Queue()
+    tracking.put(start)
+    came_from = {}
+
+    while not tracking.empty():
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+        current = tracking.get()
+
+        if current == end:
+            # TODO: do proper reconstruct (dont want to end, cause of loop)
+            reconstruct_path(came_from, end, draw)
+
+            return True
+
+        for neighbors in current.neighbors:
+            if neighbors not in came_from:
+                neighbors.make_open()
+                tracking.put(neighbors)
+                came_from[neighbors] = current
+
+        if current != start:
+            current.make_closed()
+
+        timer(start_time_var)
+        draw()
+
+    return False
+
+
+def algorithm_Dijkstra(draw, grid, start, end):
+    # Based at TechWithTim algorithm
+    import queue  # Only different from A* algorithm
+
+    count = 0
+    g_score = {spot: float("inf") for row in grid for spot in row}  # Infinity made
+    g_score[start] = 0
+    f_score = {spot: float("inf") for row in grid for spot in row}
+    f_score[start] = h(start.get_pos(), end.get_pos())
+    came_from = {}
+    open_set = queue.Queue()
+    open_set.put((0, count, start))
+
+    open_set_hash = {start}
+
+    while not open_set.empty():
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+
+        current = open_set.get()[2]
+        open_set_hash.remove(current)
+
+        if current == end:
+            reconstruct_path(came_from, end, draw)
+
+            return True
+
+        for neighbor in current.neighbors:
+            temp_g_score = g_score[current] + 1
+            if temp_g_score < g_score[neighbor]:
+                came_from[neighbor] = current
+                g_score[neighbor] = temp_g_score
+                f_score[neighbor] = temp_g_score + h(neighbor.get_pos(), end.get_pos())
+                if neighbor not in open_set_hash:
+                    count += 1
+                    open_set.put((f_score[neighbor], count, neighbor))
+                    open_set_hash.add(neighbor)
+                    neighbor.make_open()
+        timer(start_time_var)
+        draw()
+
+        if current != start:
+            current.make_closed()
+    return False
+
+
+def algorithm_A_STAR(draw, grid, start, end):
+    # Based at TechWithTim algorithm
+    from queue import PriorityQueue
+    count = 0
+    open_set = PriorityQueue()
+    open_set.put((0, count, start))
+    came_from = {}
+    g_score = {spot: float("inf") for row in grid for spot in row}  # Infinity made
+    g_score[start] = 0
+    f_score = {spot: float("inf") for row in grid for spot in row}
+    f_score[start] = h(start.get_pos(), end.get_pos())
+
+    open_set_hash = {start}
+
+    while not open_set.empty():
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+
+        current = open_set.get()[2]
+        open_set_hash.remove(current)
+
+        if current == end:
+            reconstruct_path(came_from, end, draw)
+
+            return True
+
+        for neighbor in current.neighbors:
+            temp_g_score = g_score[current] + 1
+            if temp_g_score < g_score[neighbor]:
+                came_from[neighbor] = current
+                g_score[neighbor] = temp_g_score
+                f_score[neighbor] = temp_g_score + h(neighbor.get_pos(), end.get_pos())
+
+                if neighbor not in open_set_hash:
+                    count += 1
+                    open_set.put((f_score[neighbor], count, neighbor))
+                    open_set_hash.add(neighbor)
+                    neighbor.make_open()
+        timer(start_time_var)
+        draw()
+
+        if current != start:
+            current.make_closed()
+
+    return False
+
+
 def main(screen, width, algorithm):
-    ROWS = algorithm[0]  # Normal 50
+    ROWS = 50  # Normal 50
     board = make_grid(ROWS, width)
 
     start = None
@@ -266,7 +400,7 @@ def main(screen, width, algorithm):
             if pygame.mouse.get_pressed()[0]:  # LEFT
                 pos = pygame.mouse.get_pos()
                 x_pos = pos[1]
-                if x_pos >192:
+                if x_pos > 192:
                     row, col = get_clicked_pos(pos, ROWS, width)
                     spot = board[row][col]
                     if not start and spot != end:
@@ -289,26 +423,37 @@ def main(screen, width, algorithm):
                     start = None
                 elif spot == end:
                     end = None
-            #if start and end and start_algorythm:
+            # if start and end and start_algorythm:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE and start and end:
 
-                    global starttime
-                    starttime = time.time()
+                    global start_time_var
+                    start_time_var = time.time()
 
                     for row in board:
                         for spot in row:
                             spot.update_neighbors(board)
 
-                    algorithm_A_STAR(lambda: draw(screen, board, ROWS, width), board, start, end)
+                    """ 
+                    TODO:
+                    elif action == "Greedy BFS":
+                    elif action == "Swarm":
+                    elif action == "Depth-first":
+                    elif action == "Bidirectional":
+                    elif action == "Convergent":
+                    """
+                    if Algorithm == "A* Search":
+                        algorithm_A_STAR(lambda: draw(screen, board, ROWS, width), board, start, end)
+                    elif Algorithm == "Dijkstra's":
+                        algorithm_Dijkstra(lambda: draw(screen, board, ROWS, width), board, start, end)
+                    elif Algorithm == "Breadth-first":
+                        algorithm_Breadth_First_Search(lambda: draw(screen, board, ROWS, width), board, start, end)
 
                 if event.key == pygame.K_c:
                     start = None
                     end = None
                     board = make_grid(ROWS, width)
                     total_time[0] = ''
-
-
 
     pygame.quit()
 
